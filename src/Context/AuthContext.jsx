@@ -1,79 +1,79 @@
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-} from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
-import {
-  loginUser,
-  signupUser,
-  logoutUser,
-  getCurrentUser,
-} from "../Services/authService";
+import API from "./services/api";
 
 const AuthContext = createContext(null);
 
-export const AuthProvider = ({ children }) => {
+export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Restore the existing session
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const data = await getCurrentUser();
-        setUser(data.user);
-      } catch {
-        setUser(null);
-      } finally {
-        setLoading(false);
-      }
-    };
+    let active = true;
 
-    checkAuth();
+    API.get("/Auth/Me")
+      .then((response) => {
+        if (active) {
+          setUser(response.data.user || null);
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setUser(null);
+        }
+      })
+      .finally(() => {
+        if (active) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
   }, []);
 
-  // Login
   const login = async (credentials) => {
-    const data = await loginUser(credentials);
+    const response = await API.post("/Auth/Login", credentials);
 
-    setUser(data.user);
+    if (!response.data.user) {
+      throw new Error("User information was not returned.");
+    }
 
-    return data.user;
+    setUser(response.data.user);
+
+    return response.data.user;
   };
 
-  // Signup
-  const signup = async (userData) => {
-    return await signupUser(userData);
+  const signup = async (details) => {
+    const response = await API.post("/Auth/SignUp", details);
+
+    return response.data;
   };
 
-  // Logout
   const logout = async () => {
     try {
-      await logoutUser();
+      await API.post("/Auth/Logout");
     } finally {
       setUser(null);
     }
   };
 
-  const value = {
-    user,
-    loading,
-    login,
-    signup,
-    logout,
-    isAuthenticated: Boolean(user),
-  };
-
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
+  const value = useMemo(
+    () => ({
+      user,
+      loading,
+      login,
+      signup,
+      logout,
+    }),
+    [user, loading],
   );
-};
 
-export const useAuth = () => {
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+export function useAuth() {
   const context = useContext(AuthContext);
 
   if (!context) {
@@ -81,4 +81,4 @@ export const useAuth = () => {
   }
 
   return context;
-};
+}

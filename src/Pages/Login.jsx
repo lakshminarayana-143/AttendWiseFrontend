@@ -1,63 +1,74 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { Mail, Lock, Eye, EyeOff, GraduationCap } from "lucide-react";
-import API from "../services/api";
 
-function Login() {
+import { Link, useLocation, useNavigate } from "react-router-dom";
+
+import {
+  Eye,
+  EyeOff,
+  GraduationCap,
+  LockKeyhole,
+  Mail,
+  ShieldCheck,
+} from "lucide-react";
+
+import { useAuth } from "./context/AuthContext";
+
+import { Alert, Button, Field } from "./components/Shared";
+
+export default function Login() {
+  const { login } = useAuth();
+
   const navigate = useNavigate();
+  const location = useLocation();
 
-  const [formData, setFormData] = useState({
+  const [form, setForm] = useState({
     email: "",
     password: "",
   });
 
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
+    setForm({
+      ...form,
       [e.target.name]: e.target.value,
     });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
 
-    if (!formData.email.trim() || !formData.password) {
-      setError("Please enter your email and password.");
-      return;
-    }
+    setError("");
+    setLoading(true);
 
     try {
-      setLoading(true);
-
-      const response = await API.post("/Auth/Login", {
-        email: formData.email.trim(),
-        password: formData.password,
+      const user = await login({
+        email: form.email.trim(),
+        password: form.password,
       });
 
-      const user = response.data.user;
+      const previousPath = location.state?.from?.pathname;
 
-      if (!user) {
-        setError("Login succeeded, but user information was not returned.");
-        return;
-      }
-
-      // Redirect according to the logged-in user's role.
-      if (user.role === "faculty") {
-        navigate("/faculty/dashboard");
+      if (previousPath && previousPath !== "/login") {
+        navigate(previousPath, { replace: true });
+      } else if (user.role === "faculty") {
+        navigate("/faculty/dashboard", {
+          replace: true,
+        });
       } else if (user.role === "student") {
-        navigate("/student/dashboard");
+        navigate("/student/dashboard", {
+          replace: true,
+        });
       } else {
-        navigate("/");
+        navigate("/profile", { replace: true });
       }
     } catch (err) {
       setError(
         err.response?.data?.message ||
-          "Unable to log in. Please check your backend connection."
+          err.message ||
+          "Login failed. Check your credentials.",
       );
     } finally {
       setLoading(false);
@@ -65,144 +76,132 @@ function Login() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#FAF9FF] px-4 py-10">
-      <div className="grid w-full max-w-5xl overflow-hidden rounded-3xl bg-white shadow-2xl md:grid-cols-2">
+    <div className="grid min-h-screen bg-[#faf9ff] lg:grid-cols-2">
+      {/* Left panel */}
+      <section className="hidden flex-col justify-between bg-gradient-to-br from-[#4c1d95] via-violet-800 to-[#800020] p-12 text-white lg:flex">
+        <div className="flex items-center gap-3">
+          <span className="rounded-2xl bg-white/15 p-3">
+            <GraduationCap size={30} />
+          </span>
 
-        {/* Left section */}
-        <div className="flex flex-col justify-center bg-gradient-to-br from-[#4C1D95] to-[#800020] p-10 text-white md:p-12">
-          <div className="mb-8 flex items-center gap-3">
-            <div className="rounded-xl bg-white/15 p-3">
-              <GraduationCap size={32} />
-            </div>
+          <h1 className="text-2xl font-extrabold">AttendWise</h1>
+        </div>
 
-            <h1 className="text-3xl font-bold">AttendWise</h1>
-          </div>
-
-          <h2 className="mb-5 text-3xl font-bold leading-tight md:text-4xl">
-            Welcome Back!
+        <div>
+          <h2 className="text-5xl font-extrabold leading-tight">
+            Attendance clarity.
+            <br />
+            <span className="text-violet-200">Academic confidence.</span>
           </h2>
 
-          <p className="text-base leading-7 text-purple-100">
-            Manage your attendance, track your progress, and stay connected
-            with your academic journey — all in one place.
+          <p className="mt-6 max-w-md leading-7 text-white/75">
+            Track attendance, understand your progress, and stay focused on your
+            academic goals.
           </p>
 
-          <div className="mt-10 rounded-2xl border border-white/20 bg-white/10 p-5">
-            <p className="text-sm leading-6 text-purple-50">
-              Your attendance. Your progress. Your future.
-            </p>
+          <div className="mt-9 flex items-center gap-3 rounded-2xl border border-white/15 bg-white/10 p-4">
+            <ShieldCheck size={24} />
+
+            <span className="text-sm">
+              A focused workspace for students and faculty.
+            </span>
           </div>
         </div>
 
-        {/* Right section */}
-        <div className="p-8 md:p-12">
-          <h2 className="text-3xl font-bold text-gray-900">
-            Sign In
-          </h2>
+        <p className="text-xs text-white/50">
+          AttendWise · Attendance management made simpler
+        </p>
+      </section>
 
-          <p className="mt-2 text-sm text-gray-500">
-            Enter your credentials to access AttendWise.
+      {/* Login form */}
+      <section className="flex items-center justify-center px-5 py-10 sm:px-10">
+        <div className="w-full max-w-md">
+          <div className="mb-8 flex items-center gap-3 lg:hidden">
+            <GraduationCap size={30} className="text-violet-700" />
+
+            <h1 className="text-xl font-extrabold">
+              Attend
+              <span className="text-violet-700">Wise</span>
+            </h1>
+          </div>
+
+          <p className="text-sm font-bold uppercase tracking-widest text-violet-700">
+            Welcome back
           </p>
 
-          <form onSubmit={handleSubmit} className="mt-8 space-y-6">
-            {/* Email */}
-            <div>
-              <label
-                htmlFor="email"
-                className="mb-2 block text-sm font-semibold text-gray-700"
-              >
-                Email Address
-              </label>
+          <h2 className="mt-3 text-3xl font-extrabold text-slate-900">
+            Sign in to your account
+          </h2>
 
-              <div className="flex items-center gap-3 rounded-xl border border-gray-200 px-4 transition focus-within:border-[#6D28D9] focus-within:ring-2 focus-within:ring-purple-100">
-                <Mail size={20} className="text-[#6D28D9]" />
+          <p className="mt-3 text-sm text-slate-500">
+            Use your registered email and password.
+          </p>
 
-                <input
-                  id="email"
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  placeholder="you@example.com"
-                  autoComplete="email"
-                  className="w-full py-3.5 text-sm outline-none"
-                  required
-                />
-              </div>
-            </div>
+          <div className="mt-5 space-y-3">
+            <Alert success>{location.state?.message}</Alert>
 
-            {/* Password */}
-            <div>
-              <label
-                htmlFor="password"
-                className="mb-2 block text-sm font-semibold text-gray-700"
-              >
+            <Alert>{error}</Alert>
+          </div>
+
+          <form onSubmit={handleSubmit} className="mt-6 space-y-5">
+            <Field
+              label="Email address"
+              icon={Mail}
+              type="email"
+              name="email"
+              value={form.email}
+              onChange={handleChange}
+              placeholder="you@college.edu"
+              autoComplete="email"
+              required
+            />
+
+            <label className="block">
+              <span className="mb-2 block text-sm font-semibold text-slate-700">
                 Password
-              </label>
+              </span>
 
-              <div className="flex items-center gap-3 rounded-xl border border-gray-200 px-4 transition focus-within:border-[#6D28D9] focus-within:ring-2 focus-within:ring-purple-100">
-                <Lock size={20} className="text-[#6D28D9]" />
+              <span className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3.5 focus-within:border-violet-500 focus-within:ring-4 focus-within:ring-violet-100">
+                <LockKeyhole size={18} className="text-violet-700" />
 
                 <input
-                  id="password"
+                  className="w-full bg-transparent py-3 text-sm outline-none"
                   type={showPassword ? "text" : "password"}
                   name="password"
-                  value={formData.password}
+                  value={form.password}
                   onChange={handleChange}
                   placeholder="Enter your password"
                   autoComplete="current-password"
-                  className="w-full py-3.5 text-sm outline-none"
                   required
                 />
 
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="text-gray-500 hover:text-[#6D28D9]"
-                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  className="text-slate-400 hover:text-violet-700"
+                  aria-label="Toggle password visibility"
                 >
-                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
-              </div>
-            </div>
+              </span>
+            </label>
 
-            {/* Error message */}
-            {error && (
-              <div
-                role="alert"
-                className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
-              >
-                {error}
-              </div>
-            )}
-
-            {/* Login button */}
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full rounded-xl bg-[#6D28D9] py-3.5 font-semibold text-white shadow-lg shadow-purple-200 transition hover:bg-[#4C1D95] disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {loading ? "Signing in..." : "Sign In"}
-            </button>
+            <Button type="submit" loading={loading} className="w-full py-3.5">
+              {loading ? "Signing in..." : "Sign in to AttendWise"}
+            </Button>
           </form>
 
-          <p className="mt-8 text-center text-xs leading-5 text-gray-500">
-            Secure attendance management with AttendWise.
-          </p>
-
-          <p className="mt-4 text-center text-sm text-gray-600">
+          <p className="mt-7 text-center text-sm text-slate-600">
             New to AttendWise?{" "}
             <Link
               to="/signup"
-              className="font-semibold text-[#800020] hover:underline"
+              className="font-bold text-[#800020] hover:underline"
             >
-              Create an account
+              Create a student account
             </Link>
           </p>
         </div>
-      </div>
+      </section>
     </div>
   );
 }
-
-export default Login;
