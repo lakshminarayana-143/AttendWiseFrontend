@@ -2,198 +2,366 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import {
+  GraduationCap,
+  UserRound,
+  Mail,
+  LockKeyhole,
+  Eye,
+  EyeOff,
+  IdCard,
   Building2,
   CalendarDays,
-  GraduationCap,
-  IdCard,
-  LockKeyhole,
-  Mail,
-  UserRound,
 } from "lucide-react";
 
 import { useAuth } from "../context/AuthContext";
-
 import { Alert, Button, Field } from "../components/Shared";
 
 export default function Signup() {
   const { signup } = useAuth();
   const navigate = useNavigate();
 
-  const [form, setForm] = useState({
+  const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: "",
     studentId: "",
     department: "",
     year: "",
+    role: "student",
   });
 
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleChange = (e) => {
-    setForm({
-      ...form,
-      [e.target.name]: e.target.value,
-    });
-  };
+  // Handle form input changes
+  function handleChange(event) {
+    const { name, value } = event.target;
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+    setFormData((previous) => ({
+      ...previous,
+      [name]: value,
+    }));
 
     setError("");
-    setLoading(true);
+    setSuccess("");
+  }
+
+  // Validate and submit the registration form
+  async function handleSubmit(event) {
+    event.preventDefault();
+
+    setError("");
+    setSuccess("");
+
+    const name = formData.name.trim();
+    const email = formData.email.trim().toLowerCase();
+    const studentId = formData.studentId.trim();
+    const department = formData.department.trim();
+    const password = formData.password;
+
+    if (
+      !name ||
+      !email ||
+      !password ||
+      !studentId ||
+      !department ||
+      !formData.year
+    ) {
+      setError("Please fill in all the required fields.");
+      return;
+    }
+
+    if (password.length < 8) {
+      setError("Password must contain at least 8 characters.");
+      return;
+    }
 
     try {
-      await signup({
-        ...form,
-        email: form.email.trim().toLowerCase(),
+      setLoading(true);
+
+      const response = await signup({
+        name,
+        email,
+        password,
+        studentId,
+        department,
+        year: Number(formData.year),
         role: "student",
-        year: form.year ? Number(form.year) : undefined,
       });
 
-      navigate("/login", {
-        replace: true,
-        state: {
-          message: "Account created. Please sign in.",
-        },
-      });
+      setSuccess(
+        response?.message ||
+          "Account created successfully! Redirecting to login..."
+      );
+
+      // Redirect to login after successful registration
+      setTimeout(() => {
+        navigate("/login", {
+          replace: true,
+          state: { registered: true },
+        });
+      }, 1200);
     } catch (err) {
       setError(
         err.response?.data?.message ||
-          "Signup failed. Check your details and try again.",
+          err.message ||
+          "Registration failed. Please try again."
       );
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   return (
-    <div className="min-h-screen bg-[#faf9ff] px-4 py-10">
-      <div className="mx-auto max-w-2xl">
-        <Link
-          to="/login"
-          className="mb-7 inline-flex items-center gap-2 text-xl font-extrabold"
-        >
-          <GraduationCap className="text-violet-700" />
-          AttendWise
-        </Link>
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-blue-50 px-4 py-10">
+      <div className="grid w-full max-w-5xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl md:grid-cols-2">
+        {/* Left information panel */}
+        <div className="hidden flex-col justify-between bg-indigo-700 p-10 text-white md:flex">
+          <div>
+            <div className="mb-10 flex items-center gap-3">
+              <div className="rounded-xl bg-white/15 p-3">
+                <GraduationCap size={30} />
+              </div>
 
-        <div className="rounded-3xl border border-violet-100 bg-white p-6 shadow-xl sm:p-10">
-          <p className="text-sm font-bold uppercase tracking-widest text-violet-700">
-            Get started
-          </p>
+              <div>
+                <h1 className="text-2xl font-bold">
+                  AttendWise
+                </h1>
 
-          <h1 className="mt-2 text-3xl font-extrabold">
-            Create your student account
-          </h1>
+                <p className="text-sm text-indigo-200">
+                  Smart Attendance Management
+                </p>
+              </div>
+            </div>
 
-          <p className="mt-2 text-sm text-slate-500">
-            Enter your details to join AttendWise.
-          </p>
+            <h2 className="mb-5 text-4xl font-bold leading-tight">
+              Start tracking
+              <br />
+              your attendance.
+            </h2>
 
-          <div className="mt-5">
-            <Alert>{error}</Alert>
+            <p className="max-w-sm leading-7 text-indigo-100">
+              Create your student account to monitor your
+              attendance, view subject-wise records, and work
+              toward your academic goals.
+            </p>
           </div>
 
-          <form
-            onSubmit={handleSubmit}
-            className="mt-6 grid gap-5 sm:grid-cols-2"
-          >
+          <div className="rounded-2xl border border-white/20 bg-white/10 p-5">
+            <p className="text-sm leading-6 text-indigo-50">
+              Stay informed about your attendance and take
+              control of your academic progress.
+            </p>
+          </div>
+        </div>
+
+        {/* Registration form */}
+        <div className="p-6 sm:p-10">
+          {/* Mobile heading */}
+          <div className="mb-7 md:hidden">
+            <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-600 text-white">
+              <GraduationCap size={28} />
+            </div>
+
+            <h1 className="text-2xl font-bold text-slate-900">
+              AttendWise
+            </h1>
+
+            <p className="mt-1 text-sm text-slate-500">
+              Smart Attendance Management
+            </p>
+          </div>
+
+          <div className="mb-7">
+            <p className="mb-2 text-sm font-semibold uppercase tracking-wider text-indigo-600">
+              Student registration
+            </p>
+
+            <h2 className="text-3xl font-bold tracking-tight text-slate-900">
+              Create your account
+            </h2>
+
+            <p className="mt-3 text-sm leading-6 text-slate-500">
+              Enter your details to get started with AttendWise.
+            </p>
+          </div>
+
+          {/* Error message */}
+          {error && (
+            <div className="mb-5">
+              <Alert type="error" message={error} />
+            </div>
+          )}
+
+          {/* Success message */}
+          {success && (
+            <div className="mb-5">
+              <Alert type="success" message={success} />
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Full name */}
             <Field
               label="Full name"
-              icon={UserRound}
               name="name"
-              value={form.name}
+              type="text"
+              placeholder="Enter your full name"
+              value={formData.name}
               onChange={handleChange}
-              placeholder="Your full name"
               required
+              autoComplete="name"
+              icon={<UserRound size={18} />}
             />
 
+            {/* Email */}
             <Field
               label="Email address"
-              icon={Mail}
-              type="email"
               name="email"
-              value={form.email}
+              type="email"
+              placeholder="you@example.com"
+              value={formData.email}
               onChange={handleChange}
-              placeholder="you@college.edu"
               required
+              autoComplete="email"
+              icon={<Mail size={18} />}
             />
 
+            {/* Password */}
+            <div>
+              <label
+                htmlFor="password"
+                className="mb-2 block text-sm font-medium text-slate-700"
+              >
+                Password
+              </label>
+
+              <div className="relative">
+                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                  <LockKeyhole size={18} />
+                </div>
+
+                <input
+                  id="password"
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="At least 8 characters"
+                  value={formData.password}
+                  onChange={handleChange}
+                  required
+                  minLength={8}
+                  autoComplete="new-password"
+                  className="w-full rounded-xl border border-slate-300 bg-white py-3 pl-10 pr-12 text-sm outline-none transition placeholder:text-slate-400 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100"
+                />
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setShowPassword((previous) => !previous)
+                  }
+                  aria-label={
+                    showPassword ? "Hide password" : "Show password"
+                  }
+                  className="absolute inset-y-0 right-0 flex items-center px-3 text-slate-500 hover:text-indigo-600"
+                >
+                  {showPassword ? (
+                    <EyeOff size={19} />
+                  ) : (
+                    <Eye size={19} />
+                  )}
+                </button>
+              </div>
+
+              <p className="mt-1 text-xs text-slate-500">
+                Use at least 8 characters.
+              </p>
+            </div>
+
+            {/* Student ID */}
             <Field
               label="Student ID"
-              icon={IdCard}
               name="studentId"
-              value={form.studentId}
+              type="text"
+              placeholder="Enter your student ID"
+              value={formData.studentId}
               onChange={handleChange}
-              placeholder="e.g. CSE2026"
               required
+              icon={<IdCard size={18} />}
             />
 
+            {/* Department */}
             <Field
               label="Department"
-              icon={Building2}
               name="department"
-              value={form.department}
-              onChange={handleChange}
+              type="text"
               placeholder="e.g. CSE"
+              value={formData.department}
+              onChange={handleChange}
+              required
+              icon={<Building2 size={18} />}
             />
 
-            <label>
-              <span className="mb-2 block text-sm font-semibold text-slate-700">
-                Year of study
-              </span>
+            {/* Academic year dropdown */}
+            <div>
+              <label
+                htmlFor="year"
+                className="mb-2 block text-sm font-medium text-slate-700"
+              >
+                Academic year
+              </label>
 
-              <span className="flex items-center gap-3 rounded-xl border border-slate-200 px-3.5">
-                <CalendarDays size={18} className="text-violet-700" />
+              <div className="relative">
+                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                  <CalendarDays size={18} />
+                </div>
 
                 <select
+                  id="year"
                   name="year"
-                  value={form.year}
+                  value={formData.year}
                   onChange={handleChange}
-                  className="w-full bg-transparent py-3 text-sm outline-none"
+                  required
+                  className="w-full appearance-auto rounded-xl border border-slate-300 bg-white py-3 pl-10 pr-4 text-sm text-slate-700 outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100"
                 >
-                  <option value="">Select year</option>
-                  <option value="1">First year</option>
-                  <option value="2">Second year</option>
-                  <option value="3">Third year</option>
-                  <option value="4">Fourth year</option>
+                  <option value="" disabled>
+                    Select your academic year
+                  </option>
+
+                  <option value="1">First Year</option>
+                  <option value="2">Second Year</option>
+                  <option value="3">Third Year</option>
+                  <option value="4">Fourth Year</option>
                 </select>
-              </span>
-            </label>
-
-            <Field
-              label="Password (minimum 8 characters)"
-              icon={LockKeyhole}
-              type="password"
-              name="password"
-              value={form.password}
-              onChange={handleChange}
-              minLength={8}
-              placeholder="Create a password"
-              required
-            />
-
-            <div className="sm:col-span-2">
-              <Button type="submit" loading={loading} className="w-full">
-                {loading ? "Creating account..." : "Create student account"}
-              </Button>
+              </div>
             </div>
+
+            {/* Submit button */}
+            <Button
+              type="submit"
+              disabled={loading}
+              className="w-full justify-center py-3"
+            >
+              {loading
+                ? "Creating account..."
+                : "Create account"}
+            </Button>
           </form>
 
+          {/* Login link */}
           <p className="mt-6 text-center text-sm text-slate-600">
-            Already registered?{" "}
+            Already have an account?{" "}
             <Link
               to="/login"
-              className="font-bold text-[#800020] hover:underline"
+              className="font-semibold text-indigo-600 hover:text-indigo-700"
             >
               Sign in
             </Link>
           </p>
 
-          <p className="mt-4 text-center text-xs text-slate-400">
-            Faculty accounts must be created by an authorized administrator.
+          <p className="mt-6 text-center text-xs text-slate-400">
+            © {new Date().getFullYear()} AttendWise
           </p>
         </div>
       </div>

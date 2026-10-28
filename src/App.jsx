@@ -3,7 +3,7 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 
 import ProtectedRoute from "./components/ProtectedRoute";
-import Layout from "./components/Layout";
+import Layout from "./components/AppLayout";
 
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
@@ -11,7 +11,7 @@ import Dashboard from "./pages/Dashboard";
 import Attendance from "./pages/Attendance";
 import Subjects from "./pages/Subjects";
 import Profile from "./pages/Profile";
-import Unauthorized from "./pages/Unauthorized";
+import Unauthorized from "./pages/Unauthourized";
 
 import { Loader } from "./components/Shared";
 

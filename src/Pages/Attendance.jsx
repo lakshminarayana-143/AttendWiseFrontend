@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { CalendarCheck, RefreshCw } from "lucide-react";
 
-import API from "./services/api";
+import API from "../services/api";
 
 import { Alert, Button } from "../components/Shared";
 

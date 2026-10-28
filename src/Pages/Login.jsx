@@ -1,27 +1,16 @@
 import { useState } from "react";
-
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Eye, EyeOff, GraduationCap, LockKeyhole, Mail } from "lucide-react";
 
-import {
-  Eye,
-  EyeOff,
-  GraduationCap,
-  LockKeyhole,
-  Mail,
-  ShieldCheck,
-} from "lucide-react";
-
-import { useAuth } from "./context/AuthContext";
-
-import { Alert, Button, Field } from "./components/Shared";
+import { useAuth } from "../context/AuthContext";
+import { Alert, Button, Field } from "../components/Shared";
 
 export default function Login() {
   const { login } = useAuth();
-
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [form, setForm] = useState({
+  const [formData, setFormData] = useState({
     email: "",
     password: "",
   });
@@ -30,178 +19,217 @@ export default function Login() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleChange = (e) => {
-    setForm({
-      ...form,
-      [e.target.name]: e.target.value,
-    });
-  };
+  function handleChange(event) {
+    const { name, value } = event.target;
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+    setFormData((previous) => ({
+      ...previous,
+      [name]: value,
+    }));
 
     setError("");
-    setLoading(true);
+  }
+
+  async function handleSubmit(event) {
+    event.preventDefault();
+    setError("");
+
+    const email = formData.email.trim().toLowerCase();
+    const password = formData.password;
+
+    if (!email || !password) {
+      setError("Please enter both email and password.");
+      return;
+    }
 
     try {
+      setLoading(true);
+
       const user = await login({
-        email: form.email.trim(),
-        password: form.password,
+        email,
+        password,
       });
 
-      const previousPath = location.state?.from?.pathname;
+      // Return the user to the page they originally requested,
+      // or send them to the dashboard after login.
+      const requestedPath = location.state?.from?.pathname;
 
-      if (previousPath && previousPath !== "/login") {
-        navigate(previousPath, { replace: true });
-      } else if (user.role === "faculty") {
-        navigate("/faculty/dashboard", {
-          replace: true,
-        });
-      } else if (user.role === "student") {
-        navigate("/student/dashboard", {
-          replace: true,
-        });
+      if (requestedPath && requestedPath !== "/login") {
+        navigate(requestedPath, { replace: true });
       } else {
-        navigate("/profile", { replace: true });
+        navigate("/dashboard", { replace: true });
       }
     } catch (err) {
       setError(
         err.response?.data?.message ||
           err.message ||
-          "Login failed. Check your credentials.",
+          "Login failed. Please check your credentials and try again."
       );
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   return (
-    <div className="grid min-h-screen bg-[#faf9ff] lg:grid-cols-2">
-      {/* Left panel */}
-      <section className="hidden flex-col justify-between bg-gradient-to-br from-[#4c1d95] via-violet-800 to-[#800020] p-12 text-white lg:flex">
-        <div className="flex items-center gap-3">
-          <span className="rounded-2xl bg-white/15 p-3">
-            <GraduationCap size={30} />
-          </span>
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-blue-50 px-4 py-10">
+      <div className="grid w-full max-w-5xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl md:grid-cols-2">
+        {/* Left panel */}
+        <div className="hidden flex-col justify-between bg-indigo-700 p-10 text-white md:flex">
+          <div>
+            <div className="mb-10 flex items-center gap-3">
+              <div className="rounded-xl bg-white/15 p-3">
+                <GraduationCap size={30} />
+              </div>
 
-          <h1 className="text-2xl font-extrabold">AttendWise</h1>
-        </div>
+              <div>
+                <h1 className="text-2xl font-bold">AttendWise</h1>
+                <p className="text-sm text-indigo-200">
+                  Smart Attendance Management
+                </p>
+              </div>
+            </div>
 
-        <div>
-          <h2 className="text-5xl font-extrabold leading-tight">
-            Attendance clarity.
-            <br />
-            <span className="text-violet-200">Academic confidence.</span>
-          </h2>
+            <h2 className="mb-5 text-4xl font-bold leading-tight">
+              Manage attendance.
+              <br />
+              Improve your future.
+            </h2>
 
-          <p className="mt-6 max-w-md leading-7 text-white/75">
-            Track attendance, understand your progress, and stay focused on your
-            academic goals.
-          </p>
+            <p className="max-w-sm leading-7 text-indigo-100">
+              Track attendance, review subject-wise records, and stay
+              informed about your academic progress with AttendWise.
+            </p>
+          </div>
 
-          <div className="mt-9 flex items-center gap-3 rounded-2xl border border-white/15 bg-white/10 p-4">
-            <ShieldCheck size={24} />
-
-            <span className="text-sm">
-              A focused workspace for students and faculty.
-            </span>
+          <div className="rounded-2xl border border-white/20 bg-white/10 p-5">
+            <p className="text-sm leading-6 text-indigo-50">
+              "Every class counts. Stay consistent, track your progress,
+              and work toward your academic goals."
+            </p>
           </div>
         </div>
 
-        <p className="text-xs text-white/50">
-          AttendWise · Attendance management made simpler
-        </p>
-      </section>
+        {/* Login form */}
+        <div className="p-6 sm:p-10 lg:p-12">
+          <div className="mb-8 md:hidden">
+            <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-600 text-white">
+              <GraduationCap size={28} />
+            </div>
 
-      {/* Login form */}
-      <section className="flex items-center justify-center px-5 py-10 sm:px-10">
-        <div className="w-full max-w-md">
-          <div className="mb-8 flex items-center gap-3 lg:hidden">
-            <GraduationCap size={30} className="text-violet-700" />
-
-            <h1 className="text-xl font-extrabold">
-              Attend
-              <span className="text-violet-700">Wise</span>
+            <h1 className="text-2xl font-bold text-slate-900">
+              AttendWise
             </h1>
           </div>
 
-          <p className="text-sm font-bold uppercase tracking-widest text-violet-700">
-            Welcome back
-          </p>
+          <div className="mb-8">
+            <p className="mb-2 text-sm font-semibold uppercase tracking-wider text-indigo-600">
+              Welcome back
+            </p>
 
-          <h2 className="mt-3 text-3xl font-extrabold text-slate-900">
-            Sign in to your account
-          </h2>
+            <h2 className="text-3xl font-bold tracking-tight text-slate-900">
+              Sign in to your account
+            </h2>
 
-          <p className="mt-3 text-sm text-slate-500">
-            Use your registered email and password.
-          </p>
-
-          <div className="mt-5 space-y-3">
-            <Alert success>{location.state?.message}</Alert>
-
-            <Alert>{error}</Alert>
+            <p className="mt-3 text-sm leading-6 text-slate-500">
+              Enter your registered email and password to continue.
+            </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="mt-6 space-y-5">
-            <Field
-              label="Email address"
-              icon={Mail}
-              type="email"
-              name="email"
-              value={form.email}
-              onChange={handleChange}
-              placeholder="you@college.edu"
-              autoComplete="email"
-              required
-            />
+          {error && (
+            <div className="mb-5">
+              <Alert type="error" message={error} />
+            </div>
+          )}
 
-            <label className="block">
-              <span className="mb-2 block text-sm font-semibold text-slate-700">
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div>
+              <Field
+                label="Email address"
+                name="email"
+                type="email"
+                placeholder="you@example.com"
+                value={formData.email}
+                onChange={handleChange}
+                required
+                autoComplete="email"
+                icon={<Mail size={18} />}
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="password"
+                className="mb-2 block text-sm font-medium text-slate-700"
+              >
                 Password
-              </span>
+              </label>
 
-              <span className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3.5 focus-within:border-violet-500 focus-within:ring-4 focus-within:ring-violet-100">
-                <LockKeyhole size={18} className="text-violet-700" />
+              <div className="relative">
+                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                  <LockKeyhole size={18} />
+                </div>
 
                 <input
-                  className="w-full bg-transparent py-3 text-sm outline-none"
-                  type={showPassword ? "text" : "password"}
+                  id="password"
                   name="password"
-                  value={form.password}
-                  onChange={handleChange}
+                  type={showPassword ? "text" : "password"}
                   placeholder="Enter your password"
-                  autoComplete="current-password"
+                  value={formData.password}
+                  onChange={handleChange}
                   required
+                  autoComplete="current-password"
+                  className="w-full rounded-xl border border-slate-300 bg-white py-3 pl-10 pr-12 text-sm outline-none transition placeholder:text-slate-400 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100"
                 />
 
                 <button
                   type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="text-slate-400 hover:text-violet-700"
-                  aria-label="Toggle password visibility"
+                  onClick={() =>
+                    setShowPassword((previous) => !previous)
+                  }
+                  aria-label={
+                    showPassword ? "Hide password" : "Show password"
+                  }
+                  className="absolute inset-y-0 right-0 flex items-center px-3 text-slate-500 hover:text-indigo-600"
                 >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  {showPassword ? (
+                    <EyeOff size={19} />
+                  ) : (
+                    <Eye size={19} />
+                  )}
                 </button>
-              </span>
-            </label>
+              </div>
+            </div>
 
-            <Button type="submit" loading={loading} className="w-full py-3.5">
-              {loading ? "Signing in..." : "Sign in to AttendWise"}
+            <Button
+              type="submit"
+              disabled={loading}
+              className="w-full justify-center py-3"
+            >
+              {loading ? "Signing in..." : "Sign in"}
             </Button>
           </form>
 
-          <p className="mt-7 text-center text-sm text-slate-600">
-            New to AttendWise?{" "}
+          <div className="my-6 flex items-center gap-3">
+            <div className="h-px flex-1 bg-slate-200" />
+            <span className="text-xs text-slate-400">OR</span>
+            <div className="h-px flex-1 bg-slate-200" />
+          </div>
+
+          <p className="text-center text-sm text-slate-600">
+            Don't have an account?{" "}
             <Link
               to="/signup"
-              className="font-bold text-[#800020] hover:underline"
+              className="font-semibold text-indigo-600 hover:text-indigo-700"
             >
-              Create a student account
+              Create an account
             </Link>
           </p>
+
+          <p className="mt-8 text-center text-xs text-slate-400">
+            © {new Date().getFullYear()} AttendWise
+          </p>
         </div>
-      </section>
+      </div>
     </div>
   );
 }
