@@ -1,38 +1,31 @@
 import { Navigate, useLocation } from "react-router-dom";
+
 import { useAuth } from "../context/AuthContext";
 import { Loader } from "./Shared";
 
-export default function ProtectedRoute({
-  children,
-  allowedRoles,
-}) {
+export default function ProtectedRoute({ children, allowedRoles }) {
   const { user, loading } = useAuth();
   const location = useLocation();
 
-  // Wait until the authentication check finishes
+  // Wait until session restoration finishes.
   if (loading) {
     return <Loader label="Checking your session..." />;
   }
 
-  // Redirect users who are not logged in
+  // Redirect unauthenticated users to login.
   if (!user) {
-    return (
-      <Navigate
-        to="/login"
-        replace
-        state={{ from: location }}
-      />
-    );
+    return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
-  // Restrict access according to the user's role
+  // Check whether the user's role is allowed.
   if (
-    allowedRoles?.length &&
+    Array.isArray(allowedRoles) &&
+    allowedRoles.length > 0 &&
     !allowedRoles.includes(user.role)
   ) {
     return <Navigate to="/unauthorized" replace />;
   }
 
-  // Allow authorized users to access the page
+  // Render the requested page.
   return children;
 }

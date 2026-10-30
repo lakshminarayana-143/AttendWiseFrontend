@@ -3,7 +3,6 @@ import {
   useCallback,
   useContext,
   useEffect,
-  useMemo,
   useState,
 } from "react";
 
@@ -11,18 +10,37 @@ import API from "../services/api";
 
 const AuthContext = createContext(null);
 
-export function AuthProvider({ children }) {
+export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  // Restore session after refreshing the browser.
+  // Restore the authenticated user from the server.
   const refreshUser = useCallback(async () => {
     try {
       const response = await API.get("/Auth/Me");
 
-      setUser(response.data?.user ?? null);
-    } catch {
+      const currentUser = response.data?.user;
+
+      if (!currentUser) {
+        setUser(null);
+        return null;
+      }
+
+      setUser(currentUser);
+
+      return currentUser;
+    } catch (err) {
       setUser(null);
+
+      if (err.response?.status !== 401) {
+        console.error(
+          "Unable to restore session:",
+          err.response?.data?.message || err.message,
+        );
+      }
+
+      return null;
     } finally {
       setLoading(false);
     }
@@ -32,78 +50,140 @@ export function AuthProvider({ children }) {
     refreshUser();
   }, [refreshUser]);
 
-  // Login
-  const login = useCallback(async (credentials) => {
-    const response = await API.post(
-      "/Auth/Login",
-      credentials
-    );
+  // Student registration.
+  const signup = async (formData) => {
+    setError("");
 
-    if (!response.data?.user) {
-      throw new Error(
-        "Login response did not include a user."
-      );
+    try {
+      const response = await API.post("/Auth/SignUp", {
+        ...formData,
+        role: "student",
+      });
+
+      return {
+        success: true,
+        message: response.data.message || "Student registration successful.",
+        user: response.data.user,
+      };
+    } catch (err) {
+      const message =
+        err.response?.data?.message || "Unable to register. Please try again.";
+
+      setError(message);
+
+      return {
+        success: false,
+        message,
+      };
     }
+  };
 
-    setUser(response.data.user);
+  // Faculty registration.
+  const facultySignup = async (formData) => {
+    setError("");
 
-    return response.data.user;
-  }, []);
+    try {
+      const response = await API.post("/Auth/FacultySignUp", formData);
 
-  // Signup
-  const signup = useCallback(async (details) => {
-    const response = await API.post(
-      "/Auth/SignUp",
-      details
-    );
+      return {
+        success: true,
+        message:
+          response.data.message ||
+          "Faculty registration submitted successfully.",
+        user: response.data.user,
+      };
+    } catch (err) {
+      const message =
+        err.response?.data?.message ||
+        "Unable to register faculty. Please try again.";
 
-    return response.data;
-  }, []);
+      setError(message);
 
-  // Logout
-  const logout = useCallback(async () => {
+      return {
+        success: false,
+        message,
+      };
+    }
+  };
+
+  // Login.
+  const login = async (email, password) => {
+    setError("");
+
+    try {
+      const response = await API.post("/Auth/Login", {
+        email: email.trim(),
+        password,
+      });
+
+      const loggedInUser = response.data?.user;
+
+      if (!loggedInUser) {
+        throw new Error("The server did not return the logged-in user.");
+      }
+
+      setUser(loggedInUser);
+
+      return {
+        success: true,
+        user: loggedInUser,
+        message: response.data.message || "Login successful.",
+      };
+    } catch (err) {
+      const message =
+        err.response?.data?.message ||
+        err.message ||
+        "Login failed. Please try again.";
+
+      setError(message);
+
+      return {
+        success: false,
+        message,
+      };
+    }
+  };
+
+  // Logout.
+  const logout = async () => {
+    setError("");
+
     try {
       await API.post("/Auth/Logout");
+    } catch (err) {
+      console.error(
+        "Logout request failed:",
+        err.response?.data?.message || err.message,
+      );
     } finally {
       setUser(null);
     }
-  }, []);
+  };
 
-  const value = useMemo(
-    () => ({
-      user,
-      loading,
-      login,
-      signup,
-      logout,
-      refreshUser,
-    }),
-    [
-      user,
-      loading,
-      login,
-      signup,
-      logout,
-      refreshUser,
-    ]
-  );
+  const value = {
+    user,
+    loading,
+    error,
+    signup,
+    facultySignup,
+    login,
+    logout,
+    refreshUser,
+    isAuthenticated: Boolean(user),
+    isStudent: user?.role === "student",
+    isFaculty: user?.role === "faculty",
+    isAdmin: user?.role === "admin",
+  };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
-}
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+};
 
-// Custom hook
-export function useAuth() {
+export const useAuth = () => {
   const context = useContext(AuthContext);
 
-  if (!context) {
-    throw new Error(
-      "useAuth must be used inside AuthProvider"
-    );
+  if (context === null) {
+    throw new Error("useAuth must be used inside AuthProvider");
   }
 
   return context;
-}
+};
