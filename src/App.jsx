@@ -1,4 +1,3 @@
-
 import { Routes, Route, Navigate } from "react-router-dom";
 
 import Login from "./pages/Login";
@@ -11,6 +10,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Profile from "./pages/Profile";
 import Attendance from "./pages/Attendance";
 import Subjects from "./pages/Subjects";
+import InitialAdminSetup from "./pages/InitialAdminSetup";
 
 function App() {
   return (
@@ -19,6 +19,12 @@ function App() {
       <Route
         path="/"
         element={<Navigate to="/login" replace />}
+      />
+
+      {/* Initial OG Admin setup */}
+      <Route
+        path="/initial-admin-setup"
+        element={<InitialAdminSetup />}
       />
 
       {/* Public routes */}
@@ -59,7 +65,7 @@ function App() {
         }
       />
 
-      {/* Profile: students, faculty, and admins */}
+      {/* Profile */}
       <Route
         path="/profile"
         element={
@@ -71,7 +77,7 @@ function App() {
         }
       />
 
-      {/* Faculty attendance management */}
+      {/* Faculty attendance */}
       <Route
         path="/faculty/attendance"
         element={
@@ -93,7 +99,7 @@ function App() {
         }
       />
 
-      {/* Unauthorized access */}
+      {/* Unauthorized */}
       <Route
         path="/unauthorized"
         element={<Unauthorized />}
@@ -109,4 +115,3 @@ function App() {
 }
 
 export default App;
-

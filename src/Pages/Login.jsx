@@ -63,7 +63,16 @@ export default function Login() {
         return;
       }
 
-      navigate("/dashboard", { replace: true });
+      // Redirect according to user role
+      const role = result.user?.role;
+
+      if (role === "faculty") {
+        navigate("/faculty/dashboard", { replace: true });
+      } else if (role === "admin") {
+        navigate("/admin/dashboard", { replace: true });
+      } else {
+        navigate("/dashboard", { replace: true });
+      }
     } catch (err) {
       console.error("Login error:", err);
 
@@ -79,7 +88,6 @@ export default function Login() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-100 px-4 py-8">
-      {/* Main card */}
       <div className="grid w-full max-w-4xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl md:grid-cols-2">
 
         {/* Left branding panel */}
@@ -182,19 +190,17 @@ export default function Login() {
             )}
 
             <form onSubmit={handleSubmit} className="space-y-5">
-              <div>
-                <Field
-                  label="Email address"
-                  name="email"
-                  type="email"
-                  placeholder="you@example.com"
-                  value={formData.email}
-                  onChange={handleChange}
-                  required
-                  autoComplete="email"
-                  icon={<Mail size={18} />}
-                />
-              </div>
+              <Field
+                label="Email address"
+                name="email"
+                type="email"
+                placeholder="you@example.com"
+                value={formData.email}
+                onChange={handleChange}
+                required
+                autoComplete="email"
+                icon={<Mail size={18} />}
+              />
 
               <div>
                 <label
@@ -257,13 +263,25 @@ export default function Login() {
               <div className="h-px flex-1 bg-slate-200" />
             </div>
 
+            {/* Student signup */}
             <p className="text-center text-sm text-slate-600">
-              Don't have an account?{" "}
+              Don't have a student account?{" "}
               <Link
                 to="/signup"
                 className="font-semibold text-indigo-600 transition hover:text-indigo-800"
               >
-                Create an account
+                Student Signup
+              </Link>
+            </p>
+
+            {/* Faculty signup */}
+            <p className="mt-3 text-center text-sm text-slate-600">
+              Are you a faculty member?{" "}
+              <Link
+                to="/faculty-signup"
+                className="font-semibold text-indigo-600 transition hover:text-indigo-800"
+              >
+                Faculty Signup
               </Link>
             </p>
 
