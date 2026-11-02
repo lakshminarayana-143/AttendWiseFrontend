@@ -57,14 +57,13 @@ export default function Login() {
       const result = await login(email, password);
 
       if (!result || !result.success) {
-        setError(
-          result?.message || "Invalid email or password."
-        );
+        setError(result?.message || "Invalid email or password.");
         return;
       }
 
       // Redirect according to user role
       const role = result.user?.role;
+      
 
       if (role === "faculty") {
         navigate("/faculty/dashboard", { replace: true });
@@ -79,7 +78,7 @@ export default function Login() {
       setError(
         err.response?.data?.message ||
           err.message ||
-          "Unable to log in. Please try again."
+          "Unable to log in. Please try again.",
       );
     } finally {
       setLoading(false);
@@ -89,7 +88,6 @@ export default function Login() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-100 px-4 py-8">
       <div className="grid w-full max-w-4xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl md:grid-cols-2">
-
         {/* Left branding panel */}
         <div className="relative hidden flex-col justify-between overflow-hidden bg-indigo-700 p-8 text-white md:flex lg:p-10">
           <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-indigo-500/30" />
@@ -102,12 +100,8 @@ export default function Login() {
               </div>
 
               <div>
-                <h1 className="text-xl font-bold tracking-wide">
-                  AttendWise
-                </h1>
-                <p className="text-xs text-indigo-200">
-                  Attendance Management
-                </p>
+                <h1 className="text-xl font-bold tracking-wide">AttendWise</h1>
+                <p className="text-xs text-indigo-200">Attendance Management</p>
               </div>
             </div>
 
@@ -120,8 +114,8 @@ export default function Login() {
             </h2>
 
             <p className="mt-5 max-w-xs text-sm leading-6 text-indigo-100">
-              Manage attendance, track academic performance, and
-              stay on top of your educational journey.
+              Manage attendance, track academic performance, and stay on top of
+              your educational journey.
             </p>
 
             <div className="mt-8 space-y-3">
@@ -152,7 +146,6 @@ export default function Login() {
         {/* Login section */}
         <div className="flex items-center justify-center p-6 sm:p-9 lg:p-10">
           <div className="w-full max-w-sm">
-
             {/* Mobile logo */}
             <div className="mb-7 flex items-center gap-3 md:hidden">
               <div className="rounded-xl bg-indigo-600 p-2.5 text-white">
@@ -160,9 +153,7 @@ export default function Login() {
               </div>
 
               <div>
-                <h1 className="text-xl font-bold text-slate-900">
-                  AttendWise
-                </h1>
+                <h1 className="text-xl font-bold text-slate-900">AttendWise</h1>
                 <p className="text-xs text-slate-500">
                   Smart Attendance Management
                 </p>
@@ -229,19 +220,13 @@ export default function Login() {
 
                   <button
                     type="button"
-                    onClick={() =>
-                      setShowPassword((previous) => !previous)
-                    }
+                    onClick={() => setShowPassword((previous) => !previous)}
                     aria-label={
                       showPassword ? "Hide password" : "Show password"
                     }
                     className="absolute inset-y-0 right-0 flex items-center px-3 text-slate-400 transition hover:text-indigo-600"
                   >
-                    {showPassword ? (
-                      <EyeOff size={18} />
-                    ) : (
-                      <Eye size={18} />
-                    )}
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
               </div>
@@ -257,9 +242,7 @@ export default function Login() {
 
             <div className="my-6 flex items-center gap-3">
               <div className="h-px flex-1 bg-slate-200" />
-              <span className="text-xs text-slate-400">
-                NEW TO ATTENDWISE?
-              </span>
+              <span className="text-xs text-slate-400">NEW TO ATTENDWISE?</span>
               <div className="h-px flex-1 bg-slate-200" />
             </div>
 
@@ -282,6 +265,15 @@ export default function Login() {
                 className="font-semibold text-indigo-600 transition hover:text-indigo-800"
               >
                 Faculty Signup
+              </Link>
+            
+            </p>
+            <p className="mt-3 text-center text-sm text-slate-600"> Are you a Main Admin ?
+                <Link
+                to="/initial-admin-setup"
+                className="text-sm font-semibold text-indigo-600 hover:underline"
+              >
+                Initial Main Admin 
               </Link>
             </p>
 

@@ -253,7 +253,7 @@ export default function InitialAdminSetup() {
             className="flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 py-3 font-bold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {loading && <Loader2 size={18} className="animate-spin" />}
-            {loading ? "Creating account..." : "Create OG Admin Account"}
+            {loading ? "Creating account..." : "Create Main Admin Account"}
           </button>
         </form>
 

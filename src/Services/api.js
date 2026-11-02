@@ -8,4 +8,5 @@ const API = axios.create({
   },
 });
 
+export { API };
 export default API;
