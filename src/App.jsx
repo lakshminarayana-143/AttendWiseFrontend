@@ -1,3 +1,4 @@
+
 import { Routes, Route, Navigate } from "react-router-dom";
 
 import Login from "./pages/Login";
@@ -13,6 +14,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 
 import Profile from "./pages/Profile";
 import Attendance from "./pages/Attendance";
+import FacultyAttendance from "./pages/FacultyAttendance";
 import Subjects from "./pages/Subjects";
 import InitialAdminSetup from "./pages/InitialAdminSetup";
 
@@ -23,7 +25,10 @@ function App() {
       <Route path="/" element={<Navigate to="/login" replace />} />
 
       {/* Initial OG Admin setup */}
-      <Route path="/initial-admin-setup" element={<InitialAdminSetup />} />
+      <Route
+        path="/initial-admin-setup"
+        element={<InitialAdminSetup />}
+      />
 
       {/* Public routes */}
       <Route path="/login" element={<Login />} />
@@ -40,6 +45,16 @@ function App() {
         }
       />
 
+      {/* Student attendance history */}
+      <Route
+        path="/attendance"
+        element={
+          <ProtectedRoute allowedRoles={["student"]}>
+            <Attendance />
+          </ProtectedRoute>
+        }
+      />
+
       {/* Faculty dashboard */}
       <Route
         path="/faculty/dashboard"
@@ -50,7 +65,17 @@ function App() {
         }
       />
 
-      {/* Admin dashboard - OG and temporary admins */}
+      {/* Faculty attendance marking */}
+      <Route
+        path="/faculty/attendance"
+        element={
+          <ProtectedRoute allowedRoles={["faculty"]}>
+            <FacultyAttendance />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Admin dashboard */}
       <Route
         path="/admin/dashboard"
         element={
@@ -66,16 +91,6 @@ function App() {
         element={
           <ProtectedRoute allowedRoles={["student", "faculty", "admin"]}>
             <Profile />
-          </ProtectedRoute>
-        }
-      />
-
-      {/* Faculty attendance */}
-      <Route
-        path="/faculty/attendance"
-        element={
-          <ProtectedRoute allowedRoles={["faculty"]}>
-            <Attendance />
           </ProtectedRoute>
         }
       />
