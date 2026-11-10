@@ -15,13 +15,11 @@ export default function Attendance() {
     setError("");
 
     try {
-      const response = await API.get("/api/attendance/me");
+     const response = await API.get("/Attendance/my-attendance");
 
-      const data = response.data;
+const data = response.data;
 
-      setRecords(
-        Array.isArray(data) ? data : data.attendance || data.records || [],
-      );
+setRecords(data.attendance || []);
     } catch (err) {
       setError(
         err.response?.data?.message ||
