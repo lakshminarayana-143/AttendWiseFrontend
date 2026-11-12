@@ -24,6 +24,7 @@ export default function FacultyReports() {
   const [loading, setLoading] = useState(false);
   const [loadingSubjects, setLoadingSubjects] = useState(true);
   const [error, setError] = useState("");
+  const [showBelow75, setShowBelow75] = useState(false);
 
   const loadSubjects = async () => {
     try {
@@ -141,6 +142,9 @@ export default function FacultyReports() {
 
     URL.revokeObjectURL(url);
   };
+  const displayedReport = report?.report.filter((item) =>
+  showBelow75 ? item.percentage < 75 : true
+) || [];
 
   return (
     <DashboardLayout role="faculty">
@@ -326,74 +330,105 @@ export default function FacultyReports() {
             </section>
 
             {/* Student Report Table */}
-            <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
-              <div className="border-b border-slate-100 p-5">
-                <h2 className="font-bold text-slate-900">
-                  Student-wise Attendance
-                </h2>
+           
+{/* Student Report Table */}
+<section className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+  <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 p-5">
+    <div>
+      <h2 className="font-bold text-slate-900">
+        Student-wise Attendance
+      </h2>
 
-                <p className="mt-1 text-sm text-slate-500">
-                  Individual attendance performance.
+      <p className="mt-1 text-sm text-slate-500">
+        {displayedReport.length} students displayed
+      </p>
+    </div>
+
+    <div className="flex flex-wrap gap-2">
+      <button
+        onClick={() => setShowBelow75(false)}
+        className={`rounded-lg px-4 py-2 text-sm font-semibold ${
+          !showBelow75
+            ? "bg-violet-700 text-white"
+            : "border border-slate-300 text-slate-700 hover:bg-slate-50"
+        }`}
+      >
+        All Students
+      </button>
+
+      <button
+        onClick={() => setShowBelow75(true)}
+        className={`rounded-lg px-4 py-2 text-sm font-semibold ${
+          showBelow75
+            ? "bg-rose-600 text-white"
+            : "border border-rose-200 text-rose-700 hover:bg-rose-50"
+        }`}
+      >
+        Below 75%
+      </button>
+    </div>
+  </div>
+
+  {displayedReport.length === 0 ? (
+    <div className="p-10 text-center text-sm text-slate-500">
+      {showBelow75
+        ? "Great! No students are below 75% attendance."
+        : "No matching students found."}
+    </div>
+  ) : (
+    <div className="overflow-x-auto">
+      <table className="w-full text-left text-sm">
+        <thead className="bg-violet-50 text-xs uppercase text-violet-900">
+          <tr>
+            <th className="px-5 py-4">Student</th>
+            <th className="px-5 py-4">Student ID</th>
+            <th className="px-5 py-4">Total Classes</th>
+            <th className="px-5 py-4">Present</th>
+            <th className="px-5 py-4">Absent</th>
+            <th className="px-5 py-4">Percentage</th>
+          </tr>
+        </thead>
+
+        <tbody className="divide-y divide-slate-100">
+          {displayedReport.map((item) => (
+            <tr key={item.student._id}>
+              <td className="px-5 py-4">
+                <p className="font-semibold text-slate-800">
+                  {item.student.name}
                 </p>
-              </div>
 
-              {report.report.length === 0 ? (
-                <div className="p-10 text-center text-sm text-slate-500">
-                  No matching students found.
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-sm">
-                    <thead className="bg-violet-50 text-xs uppercase text-violet-900">
-                      <tr>
-                        <th className="px-5 py-4">Student</th>
-                        <th className="px-5 py-4">Student ID</th>
-                        <th className="px-5 py-4">Total Classes</th>
-                        <th className="px-5 py-4">Present</th>
-                        <th className="px-5 py-4">Absent</th>
-                        <th className="px-5 py-4">Percentage</th>
-                      </tr>
-                    </thead>
+                <p className="mt-1 text-xs text-slate-500">
+                  {item.student.email}
+                </p>
+              </td>
 
-                    <tbody className="divide-y divide-slate-100">
-                      {report.report.map((item) => (
-                        <tr key={item.student._id}>
-                          <td className="px-5 py-4">
-                            <p className="font-semibold text-slate-800">
-                              {item.student.name}
-                            </p>
+              <td className="px-5 py-4 text-slate-600">
+                {item.student.studentId || "—"}
+              </td>
 
-                            <p className="mt-1 text-xs text-slate-500">
-                              {item.student.email}
-                            </p>
-                          </td>
+              <td className="px-5 py-4">
+                {item.totalClasses}
+              </td>
 
-                          <td className="px-5 py-4 text-slate-600">
-                            {item.student.studentId || "—"}
-                          </td>
+              <td className="px-5 py-4 font-semibold text-emerald-700">
+                {item.present}
+              </td>
 
-                          <td className="px-5 py-4">
-                            {item.totalClasses}
-                          </td>
+              <td className="px-5 py-4 font-semibold text-rose-700">
+                {item.absent}
+              </td>
 
-                          <td className="px-5 py-4 text-emerald-700 font-semibold">
-                            {item.present}
-                          </td>
+              <td className="px-5 py-4">
+                <Percentage value={item.percentage} />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )}
+</section>
 
-                          <td className="px-5 py-4 text-rose-700 font-semibold">
-                            {item.absent}
-                          </td>
-
-                          <td className="px-5 py-4">
-                            <Percentage value={item.percentage} />
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </section>
           </>
         )}
 
