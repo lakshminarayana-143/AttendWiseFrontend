@@ -15,6 +15,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Profile from "./pages/Profile";
 import Attendance from "./pages/Attendance";
 import FacultyAttendance from "./pages/FacultyAttendance";
+import FacultyReports from "./pages/FacultyReports";
 import Subjects from "./pages/Subjects";
 import InitialAdminSetup from "./pages/InitialAdminSetup";
 
@@ -71,6 +72,16 @@ function App() {
         element={
           <ProtectedRoute allowedRoles={["faculty"]}>
             <FacultyAttendance />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Faculty attendance reports */}
+      <Route
+        path="/faculty/reports"
+        element={
+          <ProtectedRoute allowedRoles={["faculty"]}>
+            <FacultyReports />
           </ProtectedRoute>
         }
       />

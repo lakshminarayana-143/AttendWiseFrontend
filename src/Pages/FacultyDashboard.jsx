@@ -12,6 +12,7 @@ import {
   AlertCircle,
   GraduationCap,
   ArrowRight,
+  ChartColumnIncreasing,
 } from "lucide-react";
 
 export default function FacultyDashboard() {
@@ -46,7 +47,6 @@ export default function FacultyDashboard() {
   return (
     <DashboardLayout role="faculty">
       <div className="space-y-7">
-
         {/* Welcome Section */}
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
@@ -82,7 +82,6 @@ export default function FacultyDashboard() {
 
         {/* Statistics */}
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-
           <StatCard
             title="My Subjects"
             value={loading ? "..." : subjects.length}
@@ -116,7 +115,6 @@ export default function FacultyDashboard() {
             icon={Users}
             color="green"
           />
-
         </div>
 
         {/* Quick Actions */}
@@ -125,8 +123,7 @@ export default function FacultyDashboard() {
             Quick Actions
           </h2>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <ActionCard
               icon={Plus}
               title="Manage Subjects"
@@ -143,12 +140,18 @@ export default function FacultyDashboard() {
               onClick={() => navigate("/faculty/attendance")}
             />
 
+            <ActionCard
+              icon={ChartColumnIncreasing}
+              title="Attendance Reports"
+              description="View student-wise attendance and class performance."
+              buttonText="View Reports"
+              onClick={() => navigate("/faculty/reports")}
+            />
           </div>
         </section>
 
         {/* My Subjects */}
         <section className="rounded-2xl border border-slate-200 bg-white p-6">
-
           <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 className="text-lg font-bold text-slate-900">
@@ -197,14 +200,12 @@ export default function FacultyDashboard() {
             </div>
           ) : (
             <div className="grid gap-4 md:grid-cols-2">
-
               {subjects.map((subject) => (
                 <div
                   key={subject._id}
                   className="rounded-xl border border-slate-200 p-5 transition hover:border-violet-300 hover:shadow-sm"
                 >
                   <div className="flex items-start justify-between gap-3">
-
                     <div>
                       <h3 className="font-bold text-slate-900">
                         {subject.name}
@@ -218,17 +219,11 @@ export default function FacultyDashboard() {
                     <div className="rounded-xl bg-violet-100 p-3 text-violet-700">
                       <BookOpen size={20} />
                     </div>
-
                   </div>
 
                   <div className="mt-5 space-y-2 text-sm text-slate-600">
-                    <p>
-                      Department: {subject.department}
-                    </p>
-
-                    <p>
-                      Academic Year: {subject.year}
-                    </p>
+                    <p>Department: {subject.department}</p>
+                    <p>Academic Year: {subject.year}</p>
                   </div>
 
                   <button
@@ -240,12 +235,9 @@ export default function FacultyDashboard() {
                   </button>
                 </div>
               ))}
-
             </div>
           )}
-
         </section>
-
       </div>
     </DashboardLayout>
   );
