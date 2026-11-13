@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ShieldCheck, Eye, EyeOff, Loader2 } from "lucide-react";
@@ -8,10 +9,8 @@ export default function InitialAdminSetup() {
   const navigate = useNavigate();
 
   const [form, setForm] = useState({
-    name: "",
     email: "",
     password: "",
-    confirmPassword: "",
     setupSecret: "",
   });
 
@@ -21,12 +20,10 @@ export default function InitialAdminSetup() {
   const [available, setAvailable] = useState(false);
   const [error, setError] = useState("");
 
-  // Check whether initial OG Admin setup is available
   useEffect(() => {
     const checkSetup = async () => {
       try {
         const response = await API.get("/AdminOwnership/status");
-
         setAvailable(response.data.setupRequired === true);
       } catch (err) {
         setError(
@@ -42,26 +39,20 @@ export default function InitialAdminSetup() {
   }, []);
 
   const handleChange = (e) => {
-    setForm({
-      ...form,
+    setForm((prev) => ({
+      ...prev,
       [e.target.name]: e.target.value,
-    });
+    }));
 
     setError("");
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     setError("");
 
     if (form.password.length < 8) {
       setError("Password must contain at least 8 characters.");
-      return;
-    }
-
-    if (form.password !== form.confirmPassword) {
-      setError("Passwords do not match.");
       return;
     }
 
@@ -74,7 +65,6 @@ export default function InitialAdminSetup() {
       setLoading(true);
 
       await API.post("/AdminOwnership/setup", {
-        name: form.name.trim(),
         email: form.email.trim().toLowerCase(),
         password: form.password,
         setupSecret: form.setupSecret,
@@ -84,7 +74,7 @@ export default function InitialAdminSetup() {
     } catch (err) {
       setError(
         err.response?.data?.message ||
-          "Unable to create OG Admin account."
+          "Unable to establish OG Admin."
       );
     } finally {
       setLoading(false);
@@ -103,10 +93,7 @@ export default function InitialAdminSetup() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-100 p-5">
         <div className="w-full max-w-md rounded-2xl bg-white p-8 text-center shadow-lg">
-          <ShieldCheck
-            size={45}
-            className="mx-auto text-green-600"
-          />
+          <ShieldCheck size={45} className="mx-auto text-green-600" />
 
           <h1 className="mt-4 text-2xl font-bold">
             Initial Setup Unavailable
@@ -141,7 +128,8 @@ export default function InitialAdminSetup() {
           </h1>
 
           <p className="mt-2 text-sm text-slate-500">
-            Create the first and only OG Admin account.
+            Promote an existing approved student or faculty account
+            to the first OG Admin.
           </p>
         </div>
 
@@ -154,22 +142,7 @@ export default function InitialAdminSetup() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="mb-1 block text-sm font-semibold">
-              Admin Name
-            </label>
-
-            <input
-              name="name"
-              value={form.name}
-              onChange={handleChange}
-              required
-              placeholder="Enter your name"
-              className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-indigo-500"
-            />
-          </div>
-
-          <div>
-            <label className="mb-1 block text-sm font-semibold">
-              Email Address
+              Existing Account Email
             </label>
 
             <input
@@ -178,14 +151,14 @@ export default function InitialAdminSetup() {
               value={form.email}
               onChange={handleChange}
               required
-              placeholder="admin@example.com"
+              placeholder="Enter your registered email"
               className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-indigo-500"
             />
           </div>
 
           <div>
             <label className="mb-1 block text-sm font-semibold">
-              Password
+              Account Password
             </label>
 
             <div className="relative">
@@ -196,34 +169,19 @@ export default function InitialAdminSetup() {
                 onChange={handleChange}
                 required
                 minLength={8}
-                placeholder="Minimum 8 characters"
+                placeholder="Enter your existing password"
                 className="w-full rounded-xl border border-slate-300 px-4 py-3 pr-12 outline-none focus:border-indigo-500"
               />
 
               <button
                 type="button"
-                onClick={() => setShowPassword(!showPassword)}
+                onClick={() => setShowPassword((prev) => !prev)}
                 className="absolute right-4 top-3.5 text-slate-500"
+                aria-label={showPassword ? "Hide password" : "Show password"}
               >
                 {showPassword ? <EyeOff size={19} /> : <Eye size={19} />}
               </button>
             </div>
-          </div>
-
-          <div>
-            <label className="mb-1 block text-sm font-semibold">
-              Confirm Password
-            </label>
-
-            <input
-              type="password"
-              name="confirmPassword"
-              value={form.confirmPassword}
-              onChange={handleChange}
-              required
-              placeholder="Confirm your password"
-              className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-indigo-500"
-            />
           </div>
 
           <div>
@@ -242,9 +200,15 @@ export default function InitialAdminSetup() {
             />
 
             <p className="mt-1 text-xs text-slate-500">
-              This must match ADMIN_SETUP_SECRET configured by the
-              application operator.
+              Must match ADMIN_SETUP_SECRET configured by the application
+              operator.
             </p>
+          </div>
+
+          <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+            Only approved student or faculty accounts can become the
+            first OG Admin. Your original role will be saved for a
+            future ownership transfer.
           </div>
 
           <button
@@ -253,7 +217,7 @@ export default function InitialAdminSetup() {
             className="flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 py-3 font-bold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {loading && <Loader2 size={18} className="animate-spin" />}
-            {loading ? "Creating account..." : "Create Main Admin Account"}
+            {loading ? "Establishing ownership..." : "Establish OG Admin"}
           </button>
         </form>
 
