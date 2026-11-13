@@ -14,10 +14,10 @@ import {
   CalendarDays,
   AlertCircle,
   CheckCircle2,
-  FileText,
 } from "lucide-react";
 
 import API from "../services/api";
+import { useAuth } from "../context/AuthContext";
 
 const initialForm = {
   name: "",
@@ -31,34 +31,59 @@ const inputClass =
   "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10";
 
 export default function Subjects() {
+  const { user } = useAuth();
+
+  const role = user?.role;
+
+  const isFaculty = role === "faculty";
+  const isStudent = role === "student";
+  const isAdmin = role === "admin";
+
   const [subjects, setSubjects] = useState([]);
   const [form, setForm] = useState(initialForm);
+
   const [editingId, setEditingId] = useState(null);
   const [showForm, setShowForm] = useState(false);
+
   const [search, setSearch] = useState("");
 
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
 
+  // Load subjects based on the logged-in role.
   const loadSubjects = useCallback(async () => {
-    setLoading(true);
-    setError("");
-
     try {
-      const response = await API.get("/Subject/my-subjects");
+      setLoading(true);
+      setError("");
+
+      let response;
+
+      if (isFaculty) {
+        response = await API.get("/Subject/my-subjects");
+      } else if (isStudent || isAdmin) {
+        response = await API.get("/Subject/all");
+      } else {
+        setSubjects([]);
+        setError("Your account does not have subject access.");
+        return;
+      }
+
       const data = response.data;
 
-      setSubjects(
-        Array.isArray(data)
-          ? data
-          : Array.isArray(data.subjects)
-            ? data.subjects
-            : []
-      );
+      const subjectList = Array.isArray(data)
+        ? data
+        : Array.isArray(data.subjects)
+          ? data.subjects
+          : [];
+
+      setSubjects(subjectList);
     } catch (err) {
+      console.error("Load subjects error:", err);
+
       setError(
         err.response?.data?.message ||
           "Unable to load subjects. Please try again."
@@ -66,7 +91,7 @@ export default function Subjects() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [isFaculty, isStudent, isAdmin]);
 
   useEffect(() => {
     loadSubjects();
@@ -74,6 +99,7 @@ export default function Subjects() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+
     setForm((previous) => ({
       ...previous,
       [name]: value,
@@ -81,6 +107,8 @@ export default function Subjects() {
   };
 
   const openCreateForm = () => {
+    if (!isFaculty) return;
+
     setForm(initialForm);
     setEditingId(null);
     setShowForm(true);
@@ -94,8 +122,12 @@ export default function Subjects() {
     setForm(initialForm);
   };
 
+  // Create or update subject.
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!isFaculty) return;
+
     setError("");
     setSuccess("");
 
@@ -131,6 +163,8 @@ export default function Subjects() {
       closeForm();
       await loadSubjects();
     } catch (err) {
+      console.error("Save subject error:", err);
+
       setError(
         err.response?.data?.message || "Unable to save subject."
       );
@@ -140,6 +174,8 @@ export default function Subjects() {
   };
 
   const handleEdit = (subject) => {
+    if (!isFaculty) return;
+
     setForm({
       name: subject.name || "",
       code: subject.code || "",
@@ -154,7 +190,10 @@ export default function Subjects() {
     setSuccess("");
   };
 
+  // Delete subject.
   const handleDelete = async (id) => {
+    if (!isFaculty) return;
+
     const confirmed = window.confirm(
       "Are you sure you want to delete this subject?"
     );
@@ -167,9 +206,12 @@ export default function Subjects() {
 
     try {
       await API.delete(`/Subject/${id}`);
+
       setSuccess("Subject deleted successfully.");
       await loadSubjects();
     } catch (err) {
+      console.error("Delete subject error:", err);
+
       setError(
         err.response?.data?.message || "Unable to delete subject."
       );
@@ -178,6 +220,7 @@ export default function Subjects() {
     }
   };
 
+  // Search subjects.
   const filteredSubjects = subjects.filter((subject) => {
     const query = search.trim().toLowerCase();
 
@@ -190,23 +233,40 @@ export default function Subjects() {
     );
   });
 
+  const pageTitle = isFaculty
+    ? "My Subjects"
+    : isStudent
+      ? "Available Subjects"
+      : "Subject Directory";
+
+  const pageDescription = isFaculty
+    ? "Manage your subjects and assigned academic classes."
+    : isStudent
+      ? "View subjects assigned to your department and academic year."
+      : "View all subjects registered in AttendWise.";
+
   return (
     <div className="mx-auto w-full max-w-7xl space-y-6 pb-8">
 
-      {/* Page header */}
+      {/* Page Header */}
       <section className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-violet-600">
             <GraduationCap size={16} />
-            Faculty Workspace
+
+            {isFaculty
+              ? "Faculty Workspace"
+              : isStudent
+                ? "Student Workspace"
+                : "Administration"}
           </div>
 
           <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
-            My Subjects
+            {pageTitle}
           </h1>
 
           <p className="mt-1.5 text-sm text-slate-500">
-            Manage your subjects and assigned academic classes.
+            {pageDescription}
           </p>
         </div>
 
@@ -224,14 +284,16 @@ export default function Subjects() {
             Refresh
           </button>
 
-          <button
-            type="button"
-            onClick={openCreateForm}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-violet-700 focus:outline-none focus:ring-4 focus:ring-violet-500/20"
-          >
-            <Plus size={17} />
-            Add Subject
-          </button>
+          {isFaculty && (
+            <button
+              type="button"
+              onClick={openCreateForm}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-violet-700"
+            >
+              <Plus size={17} />
+              Add Subject
+            </button>
+          )}
         </div>
       </section>
 
@@ -259,8 +321,9 @@ export default function Subjects() {
           icon={Layers3}
           label="Academic Years"
           value={
-            new Set(subjects.map((subject) => subject.year).filter(Boolean))
-              .size
+            new Set(
+              subjects.map((subject) => subject.year).filter(Boolean)
+            ).size
           }
           color="emerald"
         />
@@ -281,14 +344,15 @@ export default function Subjects() {
         </div>
       )}
 
-      {/* Create / Edit form */}
-      {showForm && (
+      {/* Create / Edit Form - Faculty Only */}
+      {isFaculty && showForm && (
         <section className="overflow-hidden rounded-2xl border border-violet-100 bg-white shadow-sm">
           <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4 sm:px-6">
             <div>
               <h2 className="text-base font-bold text-slate-900">
                 {editingId ? "Edit Subject" : "Create New Subject"}
               </h2>
+
               <p className="mt-1 text-xs text-slate-500">
                 Enter the academic subject details below.
               </p>
@@ -306,7 +370,6 @@ export default function Subjects() {
 
           <form onSubmit={handleSubmit} className="space-y-5 p-5 sm:p-6">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-
               <FormField label="Subject Name" required>
                 <input
                   name="name"
@@ -369,6 +432,7 @@ export default function Subjects() {
                     maxLength={500}
                     className={`${inputClass} resize-y`}
                   />
+
                   <p className="mt-1 text-right text-xs text-slate-400">
                     {form.description.length}/500
                   </p>
@@ -394,6 +458,7 @@ export default function Subjects() {
                 {saving && (
                   <RefreshCw size={15} className="animate-spin" />
                 )}
+
                 {saving
                   ? "Saving..."
                   : editingId
@@ -405,14 +470,17 @@ export default function Subjects() {
         </section>
       )}
 
-      {/* Subject list */}
+      {/* Subject Directory */}
       <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-
         <div className="flex flex-col gap-3 border-b border-slate-100 p-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
           <div>
-            <h2 className="font-bold text-slate-900">Subject Directory</h2>
+            <h2 className="font-bold text-slate-900">
+              Subject Directory
+            </h2>
+
             <p className="mt-1 text-xs text-slate-500">
-              {subjects.length} subject{subjects.length !== 1 ? "s" : ""} created
+              {subjects.length} subject
+              {subjects.length !== 1 ? "s" : ""} available
             </p>
           </div>
 
@@ -421,6 +489,7 @@ export default function Subjects() {
               size={17}
               className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
             />
+
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -432,8 +501,13 @@ export default function Subjects() {
 
         {loading ? (
           <div className="flex min-h-64 flex-col items-center justify-center gap-3">
-            <RefreshCw size={25} className="animate-spin text-violet-600" />
-            <p className="text-sm text-slate-500">Loading subjects...</p>
+            <RefreshCw
+              size={25}
+              className="animate-spin text-violet-600"
+            />
+            <p className="text-sm text-slate-500">
+              Loading subjects...
+            </p>
           </div>
         ) : filteredSubjects.length === 0 ? (
           <div className="flex min-h-64 flex-col items-center justify-center px-5 py-12 text-center">
@@ -442,16 +516,20 @@ export default function Subjects() {
             </div>
 
             <h3 className="mt-4 font-bold text-slate-800">
-              {search ? "No matching subjects" : "No subjects created yet"}
+              {search
+                ? "No matching subjects"
+                : "No subjects available"}
             </h3>
 
             <p className="mt-1 max-w-sm text-sm text-slate-500">
               {search
                 ? "Try searching with another subject name, code or department."
-                : "Create your first subject to start managing your academic classes."}
+                : isFaculty
+                  ? "Create your first subject to start managing your academic classes."
+                  : "There are currently no subjects available for your account."}
             </p>
 
-            {!search && (
+            {isFaculty && !search && (
               <button
                 type="button"
                 onClick={openCreateForm}
@@ -464,7 +542,7 @@ export default function Subjects() {
           </div>
         ) : (
           <>
-            {/* Desktop table */}
+            {/* Desktop Table */}
             <div className="hidden overflow-x-auto md:block">
               <table className="w-full text-left">
                 <thead className="bg-slate-50 text-xs font-semibold uppercase tracking-wider text-slate-500">
@@ -473,7 +551,12 @@ export default function Subjects() {
                     <th className="px-5 py-3.5">Code</th>
                     <th className="px-5 py-3.5">Department</th>
                     <th className="px-5 py-3.5">Academic Year</th>
-                    <th className="px-5 py-3.5 text-right">Actions</th>
+
+                    {isFaculty && (
+                      <th className="px-5 py-3.5 text-right">
+                        Actions
+                      </th>
+                    )}
                   </tr>
                 </thead>
 
@@ -488,10 +571,12 @@ export default function Subjects() {
                           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-violet-50 text-violet-600">
                             <BookOpen size={17} />
                           </div>
+
                           <div>
                             <p className="font-semibold text-slate-800">
                               {subject.name}
                             </p>
+
                             {subject.description && (
                               <p className="mt-0.5 max-w-xs truncate text-xs text-slate-400">
                                 {subject.description}
@@ -513,54 +598,62 @@ export default function Subjects() {
 
                       <td className="px-5 py-4">
                         <span className="inline-flex items-center gap-1.5 text-sm text-slate-600">
-                          <CalendarDays size={15} className="text-slate-400" />
+                          <CalendarDays
+                            size={15}
+                            className="text-slate-400"
+                          />
                           Year {subject.year}
                         </span>
                       </td>
 
-                      <td className="px-5 py-4">
-                        <div className="flex justify-end gap-1">
-                          <ActionButton
-                            label="Edit subject"
-                            onClick={() => handleEdit(subject)}
-                            icon={Pencil}
-                            color="violet"
-                          />
-                          <ActionButton
-                            label="Delete subject"
-                            onClick={() => handleDelete(subject._id)}
-                            icon={Trash2}
-                            color="rose"
-                            disabled={deletingId === subject._id}
-                          />
-                        </div>
-                      </td>
+                      {isFaculty && (
+                        <td className="px-5 py-4">
+                          <div className="flex justify-end gap-1">
+                            <ActionButton
+                              label="Edit subject"
+                              onClick={() => handleEdit(subject)}
+                              icon={Pencil}
+                              color="violet"
+                            />
+
+                            <ActionButton
+                              label="Delete subject"
+                              onClick={() =>
+                                handleDelete(subject._id)
+                              }
+                              icon={Trash2}
+                              color="rose"
+                              disabled={deletingId === subject._id}
+                            />
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
 
-            {/* Mobile cards */}
+            {/* Mobile Cards */}
             <div className="grid gap-3 p-4 md:hidden">
               {filteredSubjects.map((subject) => (
                 <article
                   key={subject._id}
                   className="rounded-xl border border-slate-200 p-4"
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-50 text-violet-600">
-                        <BookOpen size={18} />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-slate-800">
-                          {subject.name}
-                        </h3>
-                        <p className="mt-1 text-xs text-slate-500">
-                          {subject.code}
-                        </p>
-                      </div>
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-50 text-violet-600">
+                      <BookOpen size={18} />
+                    </div>
+
+                    <div>
+                      <h3 className="font-semibold text-slate-800">
+                        {subject.name}
+                      </h3>
+
+                      <p className="mt-1 text-xs text-slate-500">
+                        {subject.code}
+                      </p>
                     </div>
                   </div>
 
@@ -568,6 +661,7 @@ export default function Subjects() {
                     <span className="rounded-lg bg-slate-100 px-2.5 py-1.5">
                       {subject.department}
                     </span>
+
                     <span className="rounded-lg bg-slate-100 px-2.5 py-1.5">
                       Year {subject.year}
                     </span>
@@ -579,21 +673,24 @@ export default function Subjects() {
                     </p>
                   )}
 
-                  <div className="mt-4 flex justify-end gap-2 border-t border-slate-100 pt-3">
-                    <ActionButton
-                      label="Edit subject"
-                      onClick={() => handleEdit(subject)}
-                      icon={Pencil}
-                      color="violet"
-                    />
-                    <ActionButton
-                      label="Delete subject"
-                      onClick={() => handleDelete(subject._id)}
-                      icon={Trash2}
-                      color="rose"
-                      disabled={deletingId === subject._id}
-                    />
-                  </div>
+                  {isFaculty && (
+                    <div className="mt-4 flex justify-end gap-2 border-t border-slate-100 pt-3">
+                      <ActionButton
+                        label="Edit subject"
+                        onClick={() => handleEdit(subject)}
+                        icon={Pencil}
+                        color="violet"
+                      />
+
+                      <ActionButton
+                        label="Delete subject"
+                        onClick={() => handleDelete(subject._id)}
+                        icon={Trash2}
+                        color="rose"
+                        disabled={deletingId === subject._id}
+                      />
+                    </div>
+                  )}
                 </article>
               ))}
             </div>
@@ -613,12 +710,20 @@ function StatCard({ icon: Icon, label, value, color }) {
 
   return (
     <div className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-      <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${styles[color]}`}>
+      <div
+        className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${styles[color]}`}
+      >
         <Icon size={21} />
       </div>
+
       <div>
-        <p className="text-xs font-medium text-slate-500">{label}</p>
-        <p className="mt-1 text-2xl font-bold text-slate-900">{value}</p>
+        <p className="text-xs font-medium text-slate-500">
+          {label}
+        </p>
+
+        <p className="mt-1 text-2xl font-bold text-slate-900">
+          {value}
+        </p>
       </div>
     </div>
   );
@@ -629,14 +734,23 @@ function FormField({ label, required, children }) {
     <div>
       <label className="mb-1.5 block text-sm font-semibold text-slate-700">
         {label}
-        {required && <span className="ml-1 text-rose-500">*</span>}
+        {required && (
+          <span className="ml-1 text-rose-500">*</span>
+        )}
       </label>
+
       {children}
     </div>
   );
 }
 
-function ActionButton({ label, onClick, icon: Icon, color, disabled }) {
+function ActionButton({
+  label,
+  onClick,
+  icon: Icon,
+  color,
+  disabled,
+}) {
   const styles = {
     violet: "text-violet-600 hover:bg-violet-50",
     rose: "text-rose-600 hover:bg-rose-50",
